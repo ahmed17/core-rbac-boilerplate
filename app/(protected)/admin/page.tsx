@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   // Extra layer of protection on server component just in case proxy is bypassed
-  if (session?.user?.role !== "ADMIN") {
+  if (!session?.user?.permissions?.includes("read:admin_panel")) {
     redirect("/dashboard");
   }
 
@@ -16,10 +16,12 @@ export default async function AdminPage() {
       id: true,
       name: true,
       email: true,
-      role: true,
+      role: {
+        select: { name: true }
+      },
     },
     orderBy: {
-      role: 'asc', 
+      role: { name: 'asc' },
     }
   });
 
@@ -49,11 +51,11 @@ export default async function AdminPage() {
                   <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full tracking-wide ${
-                      user.role === 'ADMIN' 
+                      user.role?.name === 'ADMIN' 
                         ? 'bg-blue-500/10 text-blue-500' 
                         : 'bg-zinc-500/10 text-zinc-500'
                     }`}>
-                      {user.role}
+                      {user.role?.name || "No Role"}
                     </span>
                   </td>
                 </tr>

@@ -20,6 +20,13 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
+          include: {
+            role: {
+              include: {
+                permissions: true,
+              },
+            },
+          },
         });
 
         if (!user || !user.password) {
@@ -35,12 +42,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email atau password salah.");
         }
 
+        const permissions = user.role?.permissions.map((p) => p.action) || [];
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
-        };
+          roleName: user.role?.name || null,
+          permissions,
+        } as any;
       },
     }),
   ],
@@ -51,14 +61,16 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.roleName = (user as any).roleName;
+        token.permissions = (user as any).permissions;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
+        (session.user as any).id = token.id as string;
+        (session.user as any).roleName = token.roleName as string | null;
+        (session.user as any).permissions = token.permissions as string[];
       }
       return session;
     },

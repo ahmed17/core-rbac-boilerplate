@@ -25,8 +25,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check role for admin routes
-  if (isAdminRoute && token?.role !== 'ADMIN') {
+  // Check permission for admin routes
+  if (isAdminRoute && !token?.permissions?.includes('read:admin_panel')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

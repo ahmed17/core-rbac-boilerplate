@@ -1,42 +1,83 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = "admin@rbac.local";
-  const adminPassword = "Admin@1234";
+  console.log("Seeding database...");
 
-  // Cek apakah admin sudah ada
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
-  });
-
-  if (existingAdmin) {
-    console.log(`⚠️  Admin user sudah ada: ${adminEmail}`);
-    return;
+  // 1. Create Permissions
+  const permissions = ["read:admin_panel", "read:dashboard", "manage:users"];
+  
+  for (const action of permissions) {
+    await prisma.permission.upsert({
+      where: { action },
+      update: {},
+      create: { action, description: `Permission to ${action}` },
+    });
   }
 
-  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  const allPermissions = await prisma.permission.findMany();
 
-  const admin = await prisma.user.create({
-    data: {
-      name: "Administrator",
-      email: adminEmail,
-      password: hashedPassword,
-      role: Role.ADMIN,
+  // 2. Create Roles
+  const adminRole = await prisma.role.upsert({
+    where: { name: "ADMIN" },
+    update: {
+      permissions: {
+        set: allPermissions.map((p) => ({ id: p.id })),
+      },
+    },
+    create: {
+      name: "ADMIN",
+      description: "Super Administrator",
+      permissions: {
+        connect: allPermissions.map((p) => ({ id: p.id })),
+      },
     },
   });
 
-  console.log(`✅ Admin user berhasil dibuat:`);
-  console.log(`   Email    : ${admin.email}`);
-  console.log(`   Password : ${adminPassword}`);
-  console.log(`   Role     : ${admin.role}`);
+  const dashboardPermission = await prisma.permission.findUnique({
+    where: { action: "read:dashboard" },
+  });
+
+  const userRole = await prisma.role.upsert({
+    where: { name: "USER" },
+    update: {
+      permissions: {
+        set: dashboardPermission ? [{ id: dashboardPermission.id }] : [],
+      },
+    },
+    create: {
+      name: "USER",
+      description: "Standard User",
+      permissions: {
+        connect: dashboardPermission ? [{ id: dashboardPermission.id }] : [],
+      },
+    },
+  });
+
+  // 3. Create Default Admin User
+  const hashedPassword = await bcrypt.hash("password123", 10);
+  
+  await prisma.user.upsert({
+    where: { email: "admin@rbac.local" },
+    update: {
+      roleId: adminRole.id,
+    },
+    create: {
+      name: "Super Admin",
+      email: "admin@rbac.local",
+      password: hashedPassword,
+      roleId: adminRole.id,
+    },
+  });
+
+  console.log("Database seeded successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed gagal:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

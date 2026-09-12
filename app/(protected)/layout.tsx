@@ -10,7 +10,7 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session) {
     redirect("/login");
@@ -27,7 +27,7 @@ export default async function ProtectedLayout({
                 <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                   Dashboard
                 </Link>
-                {session.user?.role === "ADMIN" && (
+                {session.user?.permissions?.includes("read:admin_panel") && (
                   <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                     Admin Panel
                   </Link>
@@ -38,7 +38,7 @@ export default async function ProtectedLayout({
             <div className="flex items-center gap-4">
               <div className="text-sm text-right hidden sm:block">
                 <p className="font-medium">{session.user?.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{session.user?.role.toLowerCase()}</p>
+                <p className="text-xs text-muted-foreground capitalize">{session.user?.roleName?.toLowerCase() || "User"}</p>
               </div>
               <ThemeToggle />
               <LogoutButton />

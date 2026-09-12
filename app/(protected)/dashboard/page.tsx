@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -25,13 +25,13 @@ export default async function DashboardPage() {
             <div className="flex justify-between items-center pt-1">
               <dt className="text-muted-foreground">Role</dt>
               <dd className="font-medium px-2.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs tracking-wider">
-                {session?.user?.role}
+                {session?.user?.roleName || "USER"}
               </dd>
             </div>
           </dl>
         </div>
         
-        {session?.user?.role === "ADMIN" && (
+        {session?.user?.permissions?.includes("read:admin_panel") && (
           <div className="glass-card p-6 rounded-2xl border-primary/20 bg-primary/[0.02] flex flex-col justify-between">
             <div>
               <h3 className="text-lg font-semibold mb-2 text-primary flex items-center gap-2">

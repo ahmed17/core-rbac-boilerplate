@@ -7,9 +7,19 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String   @unique
+  description String?
+  roles       Role[]
 }
 
 model User {
@@ -19,7 +29,8 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?   
-  role          Role      @default(USER)
+  roleId        String?
+  role          Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull)
   accounts      Account[]
   sessions      Session[]
 }
