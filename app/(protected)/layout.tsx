@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "./LogoutButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default async function ProtectedLayout({
   children,
@@ -39,6 +40,7 @@ export default async function ProtectedLayout({
                 <p className="font-medium">{session.user?.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{session.user?.role.toLowerCase()}</p>
               </div>
+              <ThemeToggle />
               <LogoutButton />
             </div>
           </div>

@@ -4,6 +4,10 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+### Fase 5: Theme Switcher & UI Contrast Tuning
+- **Dark Mode Toggle**: Mengintegrasikan `next-themes` dan membuat komponen `ThemeToggle` (Matahari/Bulan) yang disematkan pada navigasi *Landing Page* dan *Dashboard*.
+- **Contrast Resolution**: Merombak gaya `.glass-card` dan `.input-field` di `globals.css` agar secara dinamis menggunakan warna *background* dan *border* yang kontras (*pop-out*) di atas mode Terang maupun mode Gelap.
+
 ### Fase 4: Integrasi Component Library (shadcn/ui)
 - **Shadcn Initialization**: Inisialisasi arsitektur komponen menggunakan CLI `shadcn/ui` yang dioptimalkan untuk lingkungan Tailwind CSS v4 tanpa merusak konfigurasi *glassmorphism* sebelumnya (`components.json`, `app/globals.css`).
 - **Core Utility**: Menambahkan file utilitas dasar `lib/utils.ts` yang mengekspor fungsi cerdas `cn()` (gabungan `clsx` dan `tailwind-merge`) untuk resolusi konflik *class* Tailwind secara aman.
