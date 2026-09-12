@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+### UI & UX Enhancements
+- **Landing Page**: Mengganti default Next.js page (`app/page.tsx`) dengan *custom landing page* interaktif berdesain *glassmorphism* dan tombol navigasi dinamis menuju Dashboard/Login.
+- **Register Validation**: Memecah validasi *password* menjadi checklist *real-time* yang memberikan indikator hijau pada setiap kriteria yang sudah terpenuhi secara individu (`app/(auth)/register/page.tsx`).
+- **Password Visibility**: Menambahkan *toggle* ikon mata (Show/Hide) pada isian *Password* dan *Confirm Password* untuk kemudahan mengecek kesalahan ketik (`app/(auth)/register/page.tsx`).
+
 ### Fase 3: RBAC Proxy & Protected Routes
 - **Route Protection**: Menggunakan konvensi `proxy.ts` baru dari Next.js 16 (pengganti `middleware.ts`) untuk memproteksi akses menuju halaman di dalam `/dashboard` dan `/admin` berdasarkan validasi JWT token dari `next-auth/jwt`.
 - **Protected Layout**: Membuat Layout terproteksi (`app/(protected)/layout.tsx`) dengan *Top Navigation Bar* yang secara cerdas mendeteksi *role* pengguna; Navigasi menu ke "Admin Panel" hanya di-render untuk akun dengan profil `ADMIN`.

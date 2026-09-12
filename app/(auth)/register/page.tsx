@@ -13,8 +13,21 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Real-time password validation logic
+  const isLengthValid = password.length >= 8;
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSymbol = /[^a-zA-Z0-9]/.test(password);
+  
+  const isPasswordValid = password.length > 0 && isLengthValid && hasLowercase && hasUppercase && hasNumber && hasSymbol;
+  const isConfirmValid = confirmPassword.length > 0 && password === confirmPassword;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,35 +128,84 @@ export default function RegisterPage() {
           <label className="text-sm font-medium leading-none" htmlFor="password">
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="input-field"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-          />
-          <p className="text-[0.8rem] text-muted-foreground">
-            Min 8 chars, uppercase, lowercase, number & symbol.
-          </p>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="input-field pr-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
+            >
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              )}
+            </button>
+          </div>
+          <div className="flex flex-col gap-1.5 mt-2">
+            <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${isLengthValid ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Minimal 8 karakter
+            </p>
+            <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasUppercase && hasLowercase ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Huruf besar & huruf kecil
+            </p>
+            <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasNumber ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Minimal 1 angka
+            </p>
+            <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasSymbol ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Minimal 1 simbol unik
+            </p>
+          </div>
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium leading-none" htmlFor="confirmPassword">
             Confirm Password
           </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            className="input-field"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            disabled={isLoading}
-          />
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className="input-field pr-10"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
+            >
+              {showConfirmPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              )}
+            </button>
+          </div>
+          {isConfirmValid && (
+             <p className="text-[0.8rem] text-green-600 dark:text-green-500 font-medium flex items-center gap-1.5 animate-fade-in mt-1.5">
+               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+               Passwords match
+             </p>
+          )}
         </div>
         
         <button
