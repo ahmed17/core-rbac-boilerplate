@@ -4,6 +4,11 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+### Fase 4: Integrasi Component Library (shadcn/ui)
+- **Shadcn Initialization**: Inisialisasi arsitektur komponen menggunakan CLI `shadcn/ui` yang dioptimalkan untuk lingkungan Tailwind CSS v4 tanpa merusak konfigurasi *glassmorphism* sebelumnya (`components.json`, `app/globals.css`).
+- **Core Utility**: Menambahkan file utilitas dasar `lib/utils.ts` yang mengekspor fungsi cerdas `cn()` (gabungan `clsx` dan `tailwind-merge`) untuk resolusi konflik *class* Tailwind secara aman.
+- **Base Components**: Menginstal 5 komponen krusial pertama (`button`, `input`, `card`, `table`, `dropdown-menu`) secara fisik ke dalam direktori `components/ui/` sebagai landasan awal pengembangan fitur *Dashboard* dan *Admin Panel* di masa depan.
+
 ### UI & UX Enhancements
 - **Landing Page**: Mengganti default Next.js page (`app/page.tsx`) dengan *custom landing page* interaktif berdesain *glassmorphism* dan tombol navigasi dinamis menuju Dashboard/Login.
 - **Register Validation**: Memecah validasi *password* menjadi checklist *real-time* yang memberikan indikator hijau pada setiap kriteria yang sudah terpenuhi secara individu (`app/(auth)/register/page.tsx`).
