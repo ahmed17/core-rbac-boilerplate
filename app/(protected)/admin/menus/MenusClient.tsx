@@ -305,8 +305,8 @@ export default function MenusClient() {
 
       {/* Modal Add/Edit Menu */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-xl flex flex-col p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-background border border-border w-full max-w-xl flex flex-col p-6 rounded-2xl shadow-xl">
             <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Menu" : "Create New Menu"}</h2>
             
             <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col min-h-0">

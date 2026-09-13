@@ -217,8 +217,8 @@ export default function PermissionsClient() {
 
       {/* Modal Add/Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-lg p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-background border border-border w-full max-w-lg p-6 rounded-2xl shadow-xl">
             <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Permission" : "Create New Permission"}</h2>
             <form onSubmit={handleSubmit}>
               {error && (

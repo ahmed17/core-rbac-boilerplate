@@ -306,8 +306,8 @@ export default function RolesClient() {
 
       {/* Modal Add/Edit Role */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-5xl max-h-[90vh] flex flex-col p-6 rounded-2xl shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-background border border-border w-full max-w-5xl max-h-[90vh] flex flex-col p-6 rounded-2xl shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">{isEditing ? "Edit Role Configuration" : "Create New Role"}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
