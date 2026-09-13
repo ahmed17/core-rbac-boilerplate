@@ -42,5 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# AI Tools / Agents
+.agents/
+.claude/
+.cursor/
+.devin/
 
-
+# Docs
+CHANGELOG.md

@@ -25,9 +25,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check permission for admin routes
+  // Check permission for admin routes (Stealth Mode: return 404 instead of redirect)
   if (isAdminRoute && !token?.permissions?.includes('read:admin_panel')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.rewrite(new URL('/404', request.url));
   }
 
 

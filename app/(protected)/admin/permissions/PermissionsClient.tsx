@@ -285,7 +285,7 @@ export default function PermissionsClient() {
       )}
 
       {/* Modal Delete Confirmation */}
-      {permToDelete && typeof document !== "undefined" && createPortal(
+      {permissionToDelete && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
           <div className="bg-white dark:bg-zinc-950 border border-border w-full max-w-sm p-6 text-center space-y-4 rounded-2xl shadow-xl">
             <div className="mx-auto w-12 h-12 bg-error/10 text-error rounded-full flex items-center justify-center mb-4">
@@ -293,12 +293,12 @@ export default function PermissionsClient() {
             </div>
             <h2 className="text-xl font-semibold">Delete Permission</h2>
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete <strong>{permToDelete.action}</strong>?
+              Are you sure you want to delete <strong>{permissionToDelete.action}</strong>?
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setPermToDelete(null)}
+                onClick={() => setPermissionToDelete(null)}
                 className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
                 disabled={isDeleting}
               >

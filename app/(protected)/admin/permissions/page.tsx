@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import PermissionsClient from "./PermissionsClient";
 
 export const metadata = {
@@ -11,8 +11,8 @@ export const metadata = {
 export default async function PermissionsPage() {
   const session = await getServerSession(authOptions) as any;
 
-  if (!session?.user?.permissions?.includes("read:permissions")) {
-    redirect("/dashboard?error=unauthorized");
+  if (!session?.user?.permissions?.includes("read:admin_panel")) {
+    notFound();
   }
 
   return <PermissionsClient />;
