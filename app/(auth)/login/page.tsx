@@ -133,12 +133,14 @@ function LoginForm() {
         </button>
       </form>
 
-      <div className="mt-8 text-center text-sm">
-        <span className="text-muted-foreground">Don't have an account? </span>
-        <Link href="/register" className="font-medium hover:underline text-primary transition-colors">
-          Sign up
-        </Link>
-      </div>
+      {process.env.NEXT_PUBLIC_ALLOW_REGISTRATION === "true" && (
+        <div className="mt-8 text-center text-sm">
+          <span className="text-muted-foreground">Don't have an account? </span>
+          <Link href="/register" className="font-medium hover:underline text-primary transition-colors">
+            Sign up
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

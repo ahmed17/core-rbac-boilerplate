@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -23,10 +23,18 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email, password, turnstileToken } = body;
+    // 1. Cek apakah registrasi publik diizinkan
+    if (process.env.NEXT_PUBLIC_ALLOW_REGISTRATION !== "true") {
+      return NextResponse.json(
+        { error: "Public registration is currently disabled." },
+        { status: 403 }
+      );
+    }
+
+    // 2. Parse request body
+    const { name, email, password, turnstileToken } = await req.json();
 
     // Validasi input
     if (!name || !email || !password) {

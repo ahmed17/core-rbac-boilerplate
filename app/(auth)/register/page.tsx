@@ -79,12 +79,27 @@ export default function RegisterPage() {
 
   return (
     <div className="glass-card p-8 animate-slide-up">
-      <div className="flex flex-col space-y-2 text-center mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-primary">Create account</h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your details below to get started
-        </p>
-      </div>
+      {process.env.NEXT_PUBLIC_ALLOW_REGISTRATION !== "true" ? (
+        <div className="text-center py-8">
+          <div className="mx-auto w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg>
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">Registration Closed</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Public registration is currently disabled for this application. Please contact your system administrator to get an account.
+          </p>
+          <Link href="/login" className="btn-primary inline-flex">
+            Back to Login
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col space-y-2 text-center mb-8">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary">Create account</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your details below to get started
+            </p>
+          </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -235,12 +250,14 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <div className="mt-8 text-center text-sm">
-        <span className="text-muted-foreground">Already have an account? </span>
-        <Link href="/login" className="font-medium hover:underline text-primary transition-colors">
-          Sign in
-        </Link>
-      </div>
+          <div className="mt-8 text-center text-sm">
+            <span className="text-muted-foreground">Already have an account? </span>
+            <Link href="/login" className="font-medium hover:underline text-primary transition-colors">
+              Sign in
+            </Link>
+          </div>
+        </>
+      )}
     </div>
   );
 }
