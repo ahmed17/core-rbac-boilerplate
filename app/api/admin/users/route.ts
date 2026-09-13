@@ -121,9 +121,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "Role berhasil diperbarui." });
     }
 
-    // --- AKSI: UPDATE USER PROFILE ---
+    // --- AKSI: UPDATE USER PROFILE & PASSWORD ---
     if (action === "UPDATE_USER") {
-      const { userId, name, email } = body;
+      const { userId, name, email, password } = body;
 
       if (!userId || !name || !email) {
         return NextResponse.json({ error: "ID, Nama, dan Email wajib diisi." }, { status: 400 });
@@ -135,9 +135,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Email sudah digunakan oleh pengguna lain." }, { status: 409 });
       }
 
+      const updateData: any = { name, email };
+      
+      // Jika Admin juga mengisi password baru (Reset Password)
+      if (password && password.trim().length > 0) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
       await prisma.user.update({
         where: { id: userId },
-        data: { name, email },
+        data: updateData,
       });
 
       await logAudit({
@@ -145,7 +152,12 @@ export async function POST(request: Request) {
         userName: session.user.name,
         action: "UPDATE",
         target: `/api/admin/users`,
-        metadata: { updatedUserId: userId, newName: name, newEmail: email },
+        metadata: { 
+          updatedUserId: userId, 
+          newName: name, 
+          newEmail: email,
+          passwordReset: !!password // Catat jika password ikut di-reset
+        },
       });
 
       return NextResponse.json({ success: true, message: "Profil pengguna berhasil diperbarui." });
