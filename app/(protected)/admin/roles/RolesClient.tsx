@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useState, useEffect, useMemo } from "react";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -139,6 +141,56 @@ export default function RolesClient() {
     }
   };
 
+  // --- Logic untuk Permission Matrix ---
+  const { matrixData, sortedVerbs } = useMemo(() => {
+    const data: Record<string, Record<string, Permission>> = {};
+    const availableVerbs = new Set<string>();
+
+    masterPermissions.forEach(perm => {
+      let verb = "other";
+      let resource = perm.action;
+      
+      if (perm.action.includes(":")) {
+        const parts = perm.action.split(":");
+        verb = parts[0];
+        resource = parts.slice(1).join(":"); // ex: 'users', 'admin_panel'
+      }
+
+      if (!data[resource]) data[resource] = {};
+      data[resource][verb] = perm;
+      availableVerbs.add(verb);
+    });
+
+    const standardVerbs = ["read", "create", "update", "delete"];
+    const verbs = [
+      ...standardVerbs.filter(v => availableVerbs.has(v)),
+      ...Array.from(availableVerbs).filter(v => !standardVerbs.includes(v))
+    ];
+
+    return { matrixData: data, sortedVerbs: verbs };
+  }, [masterPermissions]);
+
+  const toggleRowPermissions = (resource: string) => {
+    const rowPerms = Object.values(matrixData[resource]).map(p => p.id);
+    const isAllSelected = rowPerms.every(id => selectedPermissions.includes(id));
+    
+    if (isAllSelected) {
+      setSelectedPermissions(prev => prev.filter(id => !rowPerms.includes(id)));
+    } else {
+      setSelectedPermissions(prev => {
+        const newSet = new Set([...prev, ...rowPerms]);
+        return Array.from(newSet);
+      });
+    }
+  };
+
+  const isRowFullySelected = (resource: string) => {
+    const rowPerms = Object.values(matrixData[resource]).map(p => p.id);
+    if (rowPerms.length === 0) return false;
+    return rowPerms.every(id => selectedPermissions.includes(id));
+  };
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[400px]">
@@ -257,8 +309,13 @@ export default function RolesClient() {
       {/* Modal Add/Edit Role */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
-            <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Role" : "Create New Role"}</h2>
+          <div className="glass-card w-full max-w-5xl max-h-[90vh] flex flex-col p-6 rounded-2xl shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{isEditing ? "Edit Role Configuration" : "Create New Role"}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
             
             <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col min-h-0">
               {error && (
@@ -293,44 +350,74 @@ export default function RolesClient() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-end border-b border-border/50 pb-2">
-                    <label className="text-sm font-medium">Permissions ({selectedPermissions.length}/{masterPermissions.length})</label>
+                    <div>
+                      <label className="text-lg font-bold text-primary">Konfigurasi Hak Akses (Permission Matrix)</label>
+                      <p className="text-xs text-muted-foreground">Pilih hak akses yang sesuai untuk setiap modul aplikasi.</p>
+                    </div>
                     <button 
                       type="button" 
                       onClick={() => setSelectedPermissions(selectedPermissions.length === masterPermissions.length ? [] : masterPermissions.map(p => p.id))}
-                      className="text-xs text-primary hover:underline"
+                      className="px-3 py-1.5 text-xs font-semibold bg-muted hover:bg-muted/80 rounded-md transition-colors"
                     >
-                      {selectedPermissions.length === masterPermissions.length ? "Deselect All" : "Select All"}
+                      {selectedPermissions.length === masterPermissions.length ? "Deselect All Permissions" : "Select All Permissions"}
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {masterPermissions.map((perm) => (
-                      <label 
-                        key={perm.id} 
-                        className={`flex items-start gap-3 p-3 rounded-xl border transition-colors cursor-pointer ${
-                          selectedPermissions.includes(perm.id) 
-                            ? "border-primary bg-primary/5" 
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
-                      >
-                        <div className="pt-0.5">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-background"
-                            checked={selectedPermissions.includes(perm.id)}
-                            onChange={() => togglePermission(perm.id)}
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold">{perm.action}</span>
-                          {perm.description && (
-                            <span className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{perm.description}</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
+                  {/* Matrix Table */}
+                  <div className="border border-border rounded-xl overflow-x-auto bg-background/50">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold min-w-[150px]">Modul & Submenu</th>
+                          {sortedVerbs.map(verb => (
+                            <th key={verb} className="px-4 py-3 font-semibold text-center">{verb}</th>
+                          ))}
+                          <th className="px-4 py-3 font-semibold text-center bg-muted/80">Pilih Semua</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {Object.entries(matrixData).map(([resource, verbsMap]) => (
+                          <tr key={resource} className="hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3 font-bold text-primary capitalize flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h10"/></svg>
+                              {resource.replace(/_/g, " ")}
+                            </td>
+                            {sortedVerbs.map(verb => {
+                              const perm = verbsMap[verb];
+                              if (!perm) {
+                                return <td key={verb} className="px-4 py-3 text-center text-muted-foreground/30">-</td>;
+                              }
+                              return (
+                                <td key={verb} className="px-4 py-3 text-center">
+                                  <label className="flex items-center justify-center cursor-pointer p-1">
+                                    <input
+                                      type="checkbox"
+                                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary focus:ring-offset-background"
+                                      checked={selectedPermissions.includes(perm.id)}
+                                      onChange={() => togglePermission(perm.id)}
+                                      title={perm.description || perm.action}
+                                    />
+                                  </label>
+                                </td>
+                              );
+                            })}
+                            <td className="px-4 py-3 text-center bg-muted/10">
+                              <label className="flex items-center justify-center cursor-pointer p-1">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500 bg-background"
+                                  checked={isRowFullySelected(resource)}
+                                  onChange={() => toggleRowPermissions(resource)}
+                                  title={`Pilih semua akses untuk ${resource}`}
+                                />
+                              </label>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

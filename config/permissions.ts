@@ -51,6 +51,24 @@ export const MASTER_PERMISSIONS = [
     description: "Menghapus Role dari sistem.",
   },
 
+  // --- Permission Management ---
+  {
+    action: "read:permissions",
+    description: "Melihat daftar permission sistem.",
+  },
+  {
+    action: "create:permissions",
+    description: "Menambahkan permission baru.",
+  },
+  {
+    action: "update:permissions",
+    description: "Memperbarui deskripsi permission.",
+  },
+  {
+    action: "delete:permissions",
+    description: "Menghapus permission dari sistem.",
+  },
+
   // --- Menu Management ---
   {
     action: "read:menus",
