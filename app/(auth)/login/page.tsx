@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,7 @@ function LoginForm() {
         redirect: false,
         email,
         password,
+        turnstileToken: turnstileToken || "",
         callbackUrl,
       });
 
@@ -104,11 +107,20 @@ function LoginForm() {
             </button>
           </div>
         </div>
+
+        <div className="flex justify-center">
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onSuccess={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            options={{ theme: "auto", size: "flexible" }}
+          />
+        </div>
         
         <button
           type="submit"
           className="btn-primary w-full pt-1"
-          disabled={isLoading}
+          disabled={isLoading || !turnstileToken}
         >
           {isLoading ? (
             <span className="flex items-center space-x-2">

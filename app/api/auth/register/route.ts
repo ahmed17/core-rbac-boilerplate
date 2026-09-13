@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 // Validasi password: min 8 karakter, huruf besar, huruf kecil, angka, simbol
 function validatePassword(password: string): string | null {
@@ -25,7 +26,7 @@ function validatePassword(password: string): string | null {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password, turnstileToken } = body;
 
     // Validasi input
     if (!name || !email || !password) {
@@ -33,6 +34,17 @@ export async function POST(request: Request) {
         { error: "Nama, email, dan password wajib diisi." },
         { status: 400 }
       );
+    }
+
+    // Verifikasi Turnstile Token
+    if (turnstileToken) {
+      const isTurnstileValid = await verifyTurnstileToken(turnstileToken);
+      if (!isTurnstileValid) {
+        return NextResponse.json(
+          { error: "Verifikasi keamanan gagal. Silakan muat ulang halaman." },
+          { status: 403 }
+        );
+      }
     }
 
     // Validasi format email

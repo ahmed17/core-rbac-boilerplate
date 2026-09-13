@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -12,10 +13,19 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        turnstileToken: { label: "Turnstile Token", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email dan password wajib diisi.");
+        }
+
+        // --- TURNSTILE ANTI-BOT VERIFICATION ---
+        if (credentials.turnstileToken) {
+          const isTurnstileValid = await verifyTurnstileToken(credentials.turnstileToken);
+          if (!isTurnstileValid) {
+            throw new Error("Verifikasi keamanan gagal. Silakan muat ulang halaman.");
+          }
         }
 
         let user;
