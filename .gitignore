@@ -47,6 +47,8 @@ next-env.d.ts
 .claude/
 .cursor/
 .devin/
+AGENTS.md
+CLAUDE.md
 
 # Docs
 CHANGELOG.md
