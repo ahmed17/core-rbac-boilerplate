@@ -16,37 +16,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Admin Tab Navigation */}
-      <div className="border-b border-border/50">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center gap-2 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors
-                  ${isActive 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-                  }
-                `}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {item.icon}
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+    <div className="flex flex-col md:flex-row gap-8 pt-4">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 shrink-0">
+        <div className="sticky top-24">
+          <h2 className="text-sm font-semibold text-muted-foreground tracking-widest uppercase mb-4 px-3">
+            Admin Menu
+          </h2>
+          <nav className="flex flex-col space-y-1" aria-label="Sidebar">
+            {navItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`
+                    flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200
+                    ${isActive 
+                      ? 'bg-primary/10 text-primary shadow-sm border border-primary/10' 
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent'
+                    }
+                  `}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <div className={`${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {item.icon}
+                  </div>
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
 
-      {/* Admin Content Area */}
-      <div>
+      {/* Content Area */}
+      <main className="flex-1 min-w-0">
         {children}
-      </div>
+      </main>
     </div>
   );
 }
