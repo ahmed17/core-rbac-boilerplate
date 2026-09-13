@@ -33,6 +33,21 @@ async function syncPermissions() {
   //   });
   // }
 
+  // Pastikan Role 'ADMIN' memiliki semua permissions
+  const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
+  if (adminRole) {
+    const allPermissions = await prisma.permission.findMany();
+    await prisma.role.update({
+      where: { id: adminRole.id },
+      data: {
+        permissions: {
+          set: allPermissions.map(p => ({ id: p.id }))
+        }
+      }
+    });
+    console.log("Berhasil menyinkronkan seluruh hak akses ke Role ADMIN.");
+  }
+
   console.log("Sinkronisasi permissions selesai! ✅");
 }
 
