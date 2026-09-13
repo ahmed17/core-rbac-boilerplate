@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface Permission {
