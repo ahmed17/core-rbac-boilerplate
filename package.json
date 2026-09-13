@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "sync:permissions": "tsx scripts/sync-permissions.ts",
+    "predev": "npm run sync:permissions",
+    "prebuild": "npm run sync:permissions",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
