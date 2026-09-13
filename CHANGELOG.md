@@ -2,6 +2,13 @@
 
 ## [0.1.0] - Dynamic Database RBAC
 ### Added
+- **[Fase 11]** Antarmuka (UI) User Management di halaman Admin Panel menggunakan Client Component (`AdminClient.tsx`).
+- **[Fase 11]** Fitur CRUD lengkap (Create User, Update Role, Delete User) via antarmuka tabel bergaya Glassmorphism.
+- **[Fase 11]** API `/api/admin/users/route.ts` yang terproteksi (membutuhkan sesi JWT dan permission `read:admin_panel`).
+- **[Fase 11]** Penggunaan metode `POST` untuk seluruh mutasi data demi menghindari pemblokiran oleh Web Application Firewall (WAF) lawas.
+- **[Fase 11]** Integrasi otomatis dengan sistem Audit Trails; setiap aksi `CREATE`, `UPDATE_ROLE`, dan `DELETE` di-log ke tabel `AuditLog`.
+- **[Fase 10]** Tabel `AuditLog` pada Prisma schema untuk mencatat jejak digital (*Digital Footprint*) pengguna secara permanen (append-only).
+- **[Fase 10]** Utilitas `lib/audit.ts` universal untuk mencatat aktivitas `LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGOUT`, `CREATE`, `UPDATE`, dan `DELETE`.
 - **[Fase 9]** Absolute Session Timeout 12 jam (`maxAge`) pada JWT untuk membatasi usia sesi login.
 - **[Fase 9]** Idle Auto-Logout 60 menit — komponen `IdleTimeout.tsx` mendeteksi 5 jenis aktivitas (mouse, keyboard, scroll, touch, click) dan otomatis logout jika idle.
 - **[Fase 8]** Integrasi Cloudflare Turnstile (Invisible CAPTCHA) pada halaman Login dan Register.
