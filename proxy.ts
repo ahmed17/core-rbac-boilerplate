@@ -30,34 +30,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // --- AUDIT: PAGE_VIEW (semua halaman, fire-and-forget) ---
-  if (token?.id) {
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
-    const userAgent = request.headers.get("user-agent") || "unknown";
 
-    // Kirim log ke API internal (Edge tidak bisa akses Prisma langsung)
-    try {
-      fetch(new URL("/api/internal/audit", request.url).toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-internal-key": process.env.NEXTAUTH_SECRET || "",
-        },
-        body: JSON.stringify({
-          userId: token.id,
-          userName: token.name || null,
-          action: "PAGE_VIEW",
-          target: path,
-          ip,
-          userAgent,
-        }),
-      }).catch(() => {
-        // fire-and-forget: jangan blokir navigasi user
-      });
-    } catch {
-      // Abaikan error pencatatan
-    }
-  }
 
   return NextResponse.next();
 }
