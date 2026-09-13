@@ -178,7 +178,7 @@ export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobile
         </div>
         
         {/* Footer Area of Sidebar (Toggle Button) */}
-        <div className="p-4 border-t border-slate-700/50 flex justify-center lg:justify-end">
+        <div className="p-4 pb-20 border-t border-slate-700/50 flex justify-center lg:justify-end">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="hidden lg:flex items-center justify-center p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
