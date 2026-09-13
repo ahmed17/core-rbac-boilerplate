@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0] - Dynamic Database RBAC
+### Added
+- **[Fase 6]** Dynamic Database-driven RBAC menggunakan tabel `Role` dan `Permission`.
+- **[Fase 6]** Skrip otomatis Prisma Seeding (`prisma/seed.ts`) untuk migrasi data Role/Permission awal.
+- **[Fase 6]** Injeksi array *Permissions* langsung ke dalam Token JWT (Edge-compatible).
+- **[Fase 6]** Resolusi tipe kustom TypeScript NextAuth Session untuk mendukung dynamic roles.
+
+
 Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 
 ## [Unreleased]
