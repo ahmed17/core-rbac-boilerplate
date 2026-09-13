@@ -2,6 +2,9 @@
 
 ## [0.1.0] - Dynamic Database RBAC
 ### Added
+- **[Fase 7]** Fitur Anti Brute-Force (Account Lockout System) berbasis database Prisma.
+- **[Fase 7]** Kolom `failedAttempts` dan `lockedUntil` pada tabel `User`.
+- **[Fase 7]** Logika penguncian akun selama 15 menit jika gagal login 5 kali berturut-turut.
 - **[Fase 6]** Dynamic Database-driven RBAC menggunakan tabel `Role` dan `Permission`.
 - **[Fase 6]** Skrip otomatis Prisma Seeding (`prisma/seed.ts`) untuk migrasi data Role/Permission awal.
 - **[Fase 6]** Injeksi array *Permissions* langsung ke dalam Token JWT (Edge-compatible).
