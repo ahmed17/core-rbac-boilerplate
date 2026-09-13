@@ -20,6 +20,27 @@ model Permission {
   action      String   @unique
   description String?
   roles       Role[]
+  menus       Menu[]
+}
+
+model Menu {
+  id           String      @id @default(cuid())
+  title        String
+  url          String?
+  icon         String?     // Ikon (misal: "LayoutDashboard")
+  sortOrder    Int         @default(0)
+  
+  // Hierarki (Parent-Child)
+  parentId     String?
+  parent       Menu?       @relation("MenuToSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Menu[]      @relation("MenuToSubmenu")
+  
+  // Otorisasi Akses
+  permissionId String?
+  permission   Permission? @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@index([permissionId])
 }
 
 model User {

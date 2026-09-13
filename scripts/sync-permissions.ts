@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { MASTER_PERMISSIONS } from "../config/permissions";
+import { MASTER_MENUS } from "../config/menus";
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,73 @@ async function syncPermissions() {
   }
 
   console.log("Sinkronisasi permissions selesai! ✅");
+
+  // --- MENU SYNCING ---
+  console.log("Memulai sinkronisasi menus...");
+  
+  for (const masterMenu of MASTER_MENUS) {
+    // Cari permission jika ada
+    let permId = null;
+    if (masterMenu.permissionAction) {
+      const perm = await prisma.permission.findUnique({ where: { action: masterMenu.permissionAction } });
+      if (perm) permId = perm.id;
+    }
+
+    // Upsert Parent Menu (menggunakan title sebagai identifier sederhana untuk seeder ini)
+    const parentMenu = await prisma.menu.findFirst({ where: { title: masterMenu.title, parentId: null } });
+    let parentMenuId = "";
+    
+    if (!parentMenu) {
+      const newMenu = await prisma.menu.create({
+        data: {
+          title: masterMenu.title,
+          url: masterMenu.url,
+          icon: masterMenu.icon,
+          sortOrder: masterMenu.sortOrder,
+          permissionId: permId,
+        }
+      });
+      parentMenuId = newMenu.id;
+    } else {
+      await prisma.menu.update({
+        where: { id: parentMenu.id },
+        data: { url: masterMenu.url, icon: masterMenu.icon, sortOrder: masterMenu.sortOrder, permissionId: permId }
+      });
+      parentMenuId = parentMenu.id;
+    }
+
+    // Sync Children
+    if (masterMenu.children && masterMenu.children.length > 0) {
+      for (const child of masterMenu.children) {
+        let childPermId = null;
+        if (child.permissionAction) {
+          const cPerm = await prisma.permission.findUnique({ where: { action: child.permissionAction } });
+          if (cPerm) childPermId = cPerm.id;
+        }
+
+        const childMenu = await prisma.menu.findFirst({ where: { title: child.title, parentId: parentMenuId } });
+        if (!childMenu) {
+          await prisma.menu.create({
+            data: {
+              title: child.title,
+              url: child.url,
+              icon: child.icon,
+              sortOrder: child.sortOrder,
+              permissionId: childPermId,
+              parentId: parentMenuId,
+            }
+          });
+        } else {
+          await prisma.menu.update({
+            where: { id: childMenu.id },
+            data: { url: child.url, icon: child.icon, sortOrder: child.sortOrder, permissionId: childPermId }
+          });
+        }
+      }
+    }
+  }
+
+  console.log("Sinkronisasi menus selesai! ✅");
 }
 
 syncPermissions()

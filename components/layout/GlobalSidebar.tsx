@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { MenuItem } from "@/lib/menus";
+import { icons } from "lucide-react";
 
 interface SidebarProps {
   userPermissions: string[];
@@ -10,28 +12,44 @@ interface SidebarProps {
   setMobileOpen: (open: boolean) => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  menus: MenuItem[];
 }
 
-export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobileOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
+// Komponen Helper untuk Ikon Dinamis
+const DynamicIcon = ({ name, className }: { name: string | null; className?: string }) => {
+  if (!name) return null;
+  const LucideIcon = icons[name as keyof typeof icons] as any;
+  if (!LucideIcon) {
+    const FallbackIcon = icons["Circle"] as any;
+    return <FallbackIcon className={className} />;
+  }
+  return <LucideIcon className={className} />;
+};
+
+export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobileOpen, isCollapsed, setIsCollapsed, menus }: SidebarProps) {
   const pathname = usePathname();
-  const [isAdminExpanded, setIsAdminExpanded] = useState(false);
+  // State untuk menyimpan menu induk mana saja yang sedang terbuka
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
 
-  // Auto-expand admin menu if we are inside the admin route
+  // Auto-expand menu induk jika kita sedang berada di halamannya
   useEffect(() => {
-    if (pathname.startsWith("/admin")) {
-      setIsAdminExpanded(true);
-    }
-  }, [pathname]);
+    const newExpandedState: Record<string, boolean> = {};
+    menus.forEach(menu => {
+      if (menu.children && menu.children.length > 0 && menu.url) {
+        if (pathname.startsWith(menu.url)) {
+          newExpandedState[menu.id] = true;
+        }
+      }
+    });
+    setExpandedMenus(prev => ({ ...prev, ...newExpandedState }));
+  }, [pathname, menus]);
 
-  const hasAdminAccess = userPermissions.includes("read:admin_panel");
-
-  const handleAdminPanelClick = () => {
+  const toggleMenu = (menuId: string) => {
     if (isCollapsed) {
-      // If collapsed, expand the sidebar first, then expand the menu
       setIsCollapsed(false);
-      setIsAdminExpanded(true);
+      setExpandedMenus(prev => ({ ...prev, [menuId]: true }));
     } else {
-      setIsAdminExpanded(!isAdminExpanded);
+      setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
     }
   };
 
@@ -71,11 +89,11 @@ export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobile
             className="lg:hidden text-slate-400 hover:text-white"
             onClick={() => setMobileOpen(false)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <DynamicIcon name="X" className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Navigation Menu (Dinamis dari Database) */}
         <div className={`flex-1 overflow-y-auto overflow-x-hidden py-6 flex flex-col gap-1 ${isCollapsed ? "px-2" : "px-4"}`}>
           {!isCollapsed && (
             <h3 className="mb-4 ml-2 text-xs font-semibold text-slate-500 uppercase tracking-wider animate-fade-in">
@@ -83,99 +101,93 @@ export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobile
             </h3>
           )}
 
-          {/* Dashboard Menu Item */}
-          <Link 
-            href="/dashboard"
-            className={`
-              flex items-center gap-3 py-2.5 rounded-lg transition-colors font-medium text-sm
-              ${isCollapsed ? "justify-center px-0" : "px-4"}
-              ${pathname === "/dashboard" 
-                ? "bg-slate-800 text-white" 
-                : "text-slate-400 hover:bg-slate-800 hover:text-white"
-              }
-            `}
-            title={isCollapsed ? "Dashboard" : undefined}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-            {!isCollapsed && <span className="whitespace-nowrap">Dashboard</span>}
-          </Link>
+          {menus.map((menu) => {
+            const hasChildren = menu.children && menu.children.length > 0;
+            const isExpanded = expandedMenus[menu.id] || false;
+            
+            // Logika Halaman Aktif (Parent atau Tunggal)
+            const isActive = menu.url && (menu.url === "/" ? pathname === "/" : pathname.startsWith(menu.url));
 
-          {/* Admin Panel (Tree Structure) */}
-          {hasAdminAccess && (
-            <div className="mt-2">
-              <button 
-                onClick={handleAdminPanelClick}
+            if (hasChildren) {
+              return (
+                <div key={menu.id} className="mt-1">
+                  <button 
+                    onClick={() => toggleMenu(menu.id)}
+                    className={`
+                      w-full flex items-center gap-3 py-2.5 rounded-lg transition-colors font-medium text-sm
+                      ${isCollapsed ? "justify-center px-0" : "justify-between px-4"}
+                      ${isActive
+                        ? "bg-slate-800 text-white" 
+                        : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                      }
+                    `}
+                    title={isCollapsed ? menu.title : undefined}
+                  >
+                    <div className="flex items-center gap-3">
+                      <DynamicIcon name={menu.icon} className="w-5 h-5 shrink-0" />
+                      {!isCollapsed && <span className="whitespace-nowrap">{menu.title}</span>}
+                    </div>
+                    {!isCollapsed && (
+                      <DynamicIcon 
+                        name="ChevronDown" 
+                        className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} 
+                      />
+                    )}
+                  </button>
+
+                  {/* Sub Menus */}
+                  {!isCollapsed && (
+                    <div 
+                      className={`
+                        flex flex-col gap-1 mt-1 pl-11 overflow-hidden transition-all duration-300 ease-in-out
+                        ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}
+                      `}
+                    >
+                      {menu.children?.map(child => {
+                        const isChildActive = pathname === child.url;
+                        return (
+                          <Link 
+                            key={child.id}
+                            href={child.url || "#"}
+                            className={`
+                              flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
+                              ${isChildActive 
+                                ? "text-white font-semibold" 
+                                : "text-slate-400 hover:text-white"
+                              }
+                            `}
+                          >
+                            {child.icon && <DynamicIcon name={child.icon} className="w-4 h-4 shrink-0" />}
+                            {child.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Menu Tunggal (Tanpa Anak)
+            return (
+              <Link 
+                key={menu.id}
+                href={menu.url || "#"}
                 className={`
-                  w-full flex items-center gap-3 py-2.5 rounded-lg transition-colors font-medium text-sm
-                  ${isCollapsed ? "justify-center px-0" : "justify-between px-4"}
-                  ${pathname.startsWith("/admin") 
+                  flex items-center gap-3 py-2.5 rounded-lg transition-colors font-medium text-sm mt-1
+                  ${isCollapsed ? "justify-center px-0" : "px-4"}
+                  ${isActive 
                     ? "bg-slate-800 text-white" 
                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   }
                 `}
-                title={isCollapsed ? "Admin Panel" : undefined}
+                title={isCollapsed ? menu.title : undefined}
               >
-                <div className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  {!isCollapsed && <span className="whitespace-nowrap">Admin Panel</span>}
-                </div>
-                {!isCollapsed && (
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className={`shrink-0 transition-transform duration-200 ${isAdminExpanded ? "rotate-180" : ""}`}
-                  >
-                    <path d="m6 9 6 6 6-6"/>
-                  </svg>
-                )}
-              </button>
-
-              {/* Sub Menus */}
-              {!isCollapsed && (
-                <div 
-                  className={`
-                    flex flex-col gap-1 mt-1 pl-11 overflow-hidden transition-all duration-300 ease-in-out
-                    ${isAdminExpanded ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
-                  `}
-                >
-                  <Link 
-                    href="/admin/users"
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
-                      ${pathname.includes("/admin/users") 
-                        ? "text-white font-semibold" 
-                        : "text-slate-400 hover:text-white"
-                      }
-                    `}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Users
-                  </Link>
-                  <Link 
-                    href="/admin/roles"
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
-                      ${pathname.includes("/admin/roles") 
-                        ? "text-white font-semibold" 
-                        : "text-slate-400 hover:text-white"
-                      }
-                    `}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                    Roles & Perms
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
+                <DynamicIcon name={menu.icon} className="w-5 h-5 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap">{menu.title}</span>}
+              </Link>
+            );
+          })}
         </div>
         
         {/* Footer Area of Sidebar */}

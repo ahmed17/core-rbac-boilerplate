@@ -3,19 +3,22 @@
 import { useState } from "react";
 import GlobalSidebar from "./GlobalSidebar";
 import GlobalHeader from "./GlobalHeader";
+import { MenuItem } from "@/lib/menus";
 
 interface SidebarLayoutWrapperProps {
   children: React.ReactNode;
   userPermissions: string[];
   userName: string;
   userRole: string;
+  menus: MenuItem[];
 }
 
 export default function SidebarLayoutWrapper({ 
   children, 
   userPermissions, 
   userName, 
-  userRole 
+  userRole,
+  menus
 }: SidebarLayoutWrapperProps) {
   const [isMobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -29,6 +32,7 @@ export default function SidebarLayoutWrapper({
         setMobileOpen={setMobileOpen} 
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
+        menus={menus}
       />
 
       {/* Main Content Area */}
