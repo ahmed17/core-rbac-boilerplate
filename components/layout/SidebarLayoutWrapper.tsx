@@ -18,6 +18,7 @@ export default function SidebarLayoutWrapper({
   userRole 
 }: SidebarLayoutWrapperProps) {
   const [isMobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -26,6 +27,8 @@ export default function SidebarLayoutWrapper({
         userPermissions={userPermissions} 
         isMobileOpen={isMobileOpen} 
         setMobileOpen={setMobileOpen} 
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
 
       {/* Main Content Area */}
@@ -35,6 +38,8 @@ export default function SidebarLayoutWrapper({
           userName={userName} 
           userRole={userRole} 
           setMobileOpen={setMobileOpen} 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
         />
         
         {/* Page Content */}

@@ -8,12 +8,13 @@ interface SidebarProps {
   userPermissions: string[];
   isMobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
 }
 
-export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobileOpen }: SidebarProps) {
+export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobileOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Auto-expand admin menu if we are inside the admin route
   useEffect(() => {
@@ -177,28 +178,13 @@ export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobile
 
         </div>
         
-        {/* Footer Area of Sidebar (Toggle Button) */}
-        <div className="p-4 pb-20 border-t border-slate-700/50 flex justify-center lg:justify-end">
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex items-center justify-center p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/>
-            </svg>
-          </button>
+        {/* Footer Area of Sidebar */}
+        <div className="p-6 border-t border-slate-700/50">
+          {!isCollapsed && (
+            <p className="text-xs text-slate-500 text-center animate-fade-in">
+              &copy; 2026 Core RBAC
+            </p>
+          )}
         </div>
       </aside>
     </>
