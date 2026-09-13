@@ -35,6 +35,11 @@ export default function AdminClient() {
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Edit User State
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({ name: "", email: "" });
+  const [isEditing, setIsEditing] = useState(false);
+
   // Real-time password validation logic
   const isLengthValid = newUser.password.length >= 8;
   const hasLowercase = /[a-z]/.test(newUser.password);
@@ -111,6 +116,34 @@ export default function AdminClient() {
     }
   };
 
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToEdit) return;
+    
+    setIsEditing(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "UPDATE_USER", userId: userToEdit.id, ...editFormData }),
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUserToEdit(null);
+        fetchUsers();
+      } else {
+        setError(data.error || "Gagal mengedit user");
+      }
+    } catch (err) {
+      setError("Terjadi kesalahan server");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -167,11 +200,13 @@ export default function AdminClient() {
       {/* Toolbar: Search */}
       <div className="flex items-center gap-4">
         <div className="relative w-full max-w-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
           <input
             type="text"
             placeholder="Cari nama atau email..."
-            className="input-field pl-9"
+            className="input-field pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -225,13 +260,25 @@ export default function AdminClient() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setUserToDelete(user.id)}
-                          className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
-                          title="Hapus Pengguna"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setUserToEdit(user);
+                              setEditFormData({ name: user.name || "", email: user.email || "" });
+                            }}
+                            className="text-primary hover:text-primary/80 transition-colors p-2 rounded-lg hover:bg-primary/10"
+                            title="Edit Profil"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          </button>
+                          <button
+                            onClick={() => setUserToDelete(user.id)}
+                            className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
+                            title="Hapus Pengguna"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -241,6 +288,65 @@ export default function AdminClient() {
           </table>
         </div>
       </div>
+
+      {/* Modal Edit User */}
+      {userToEdit && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="glass-card w-full max-w-md p-6">
+            <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              {error && (
+                <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-xl">
+                  {error}
+                </div>
+              )}
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Name</label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Email</label>
+                <input
+                  type="email"
+                  required
+                  className="input-field"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserToEdit(null);
+                    setError("");
+                  }}
+                  className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
+                  disabled={isEditing}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isEditing}
+                >
+                  {isEditing ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Add User */}
       {isModalOpen && (

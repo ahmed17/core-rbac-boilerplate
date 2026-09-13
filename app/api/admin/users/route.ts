@@ -121,6 +121,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "Role berhasil diperbarui." });
     }
 
+    // --- AKSI: UPDATE USER PROFILE ---
+    if (action === "UPDATE_USER") {
+      const { userId, name, email } = body;
+
+      if (!userId || !name || !email) {
+        return NextResponse.json({ error: "ID, Nama, dan Email wajib diisi." }, { status: 400 });
+      }
+
+      // Cek apakah email sudah dipakai orang lain
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail && existingEmail.id !== userId) {
+        return NextResponse.json({ error: "Email sudah digunakan oleh pengguna lain." }, { status: 409 });
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { name, email },
+      });
+
+      await logAudit({
+        userId: session.user.id,
+        userName: session.user.name,
+        action: "UPDATE",
+        target: `/api/admin/users`,
+        metadata: { updatedUserId: userId, newName: name, newEmail: email },
+      });
+
+      return NextResponse.json({ success: true, message: "Profil pengguna berhasil diperbarui." });
+    }
+
     // --- AKSI: DELETE USER ---
     if (action === "DELETE") {
       const { userId } = body;
