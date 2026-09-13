@@ -36,6 +36,25 @@ model User {
   role          Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull)
   accounts      Account[]
   sessions      Session[]
+  auditLogs     AuditLog[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  userName  String?
+  action    String   // LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, PAGE_VIEW, CREATE, READ, UPDATE, DELETE
+  target    String?  // Path halaman atau endpoint yang diakses
+  ip        String?
+  userAgent String?
+  metadata  String?  // Data tambahan dalam format JSON
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model Account {

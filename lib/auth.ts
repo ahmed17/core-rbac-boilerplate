@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { logAudit } from "@/lib/audit";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -46,12 +47,24 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user || !user.password) {
+          // Log: email tidak ditemukan
+          logAudit({
+            action: "LOGIN_FAILED",
+            target: "/login",
+            metadata: { email: credentials.email, reason: "User not found" },
+          });
           throw new Error("Email atau password salah.");
         }
 
-        // --- ACCOUNT LOCKOUT CHECK ---
         if (user.lockedUntil && user.lockedUntil > new Date()) {
           const remainingMinutes = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+          logAudit({
+            userId: user.id,
+            userName: user.name,
+            action: "LOGIN_FAILED",
+            target: "/login",
+            metadata: { reason: "Account locked", remainingMinutes },
+          });
           throw new Error(`Akun terkunci karena terlalu banyak percobaan. Coba lagi dalam ${remainingMinutes} menit.`);
         }
 
@@ -75,9 +88,23 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (isLocked) {
+            logAudit({
+              userId: user.id,
+              userName: user.name,
+              action: "LOGIN_FAILED",
+              target: "/login",
+              metadata: { reason: "Account locked after 5 failed attempts" },
+            });
             throw new Error("Akun Anda telah dikunci selama 15 menit karena terlalu banyak percobaan salah.");
           }
 
+          logAudit({
+            userId: user.id,
+            userName: user.name,
+            action: "LOGIN_FAILED",
+            target: "/login",
+            metadata: { reason: "Wrong password", attempt: newFailedAttempts },
+          });
           throw new Error("Email atau password salah.");
         }
 
@@ -93,6 +120,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         const permissions = user.role?.permissions.map((p) => p.action) || [];
+
+        // --- AUDIT: LOGIN SUCCESS ---
+        logAudit({
+          userId: user.id,
+          userName: user.name,
+          action: "LOGIN_SUCCESS",
+          target: "/login",
+          metadata: { role: user.role?.name || "USER" },
+        });
 
         return {
           id: user.id,
@@ -124,6 +160,18 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).permissions = token.permissions as string[];
       }
       return session;
+    },
+  },
+  events: {
+    async signOut({ token }) {
+      if (token?.id) {
+        logAudit({
+          userId: token.id as string,
+          userName: (token.name as string) || null,
+          action: "LOGOUT",
+          target: "/logout",
+        });
+      }
     },
   },
   pages: {
