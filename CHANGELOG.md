@@ -2,6 +2,11 @@
 
 ## [0.1.0] - Dynamic Database RBAC
 ### Added
+- **[Fase 9]** Absolute Session Timeout 12 jam (`maxAge`) pada JWT untuk membatasi usia sesi login.
+- **[Fase 9]** Idle Auto-Logout 60 menit — komponen `IdleTimeout.tsx` mendeteksi 5 jenis aktivitas (mouse, keyboard, scroll, touch, click) dan otomatis logout jika idle.
+- **[Fase 8]** Integrasi Cloudflare Turnstile (Invisible CAPTCHA) pada halaman Login dan Register.
+- **[Fase 8]** Utilitas server-side `lib/turnstile.ts` untuk verifikasi token ke API Cloudflare (Server-to-Server).
+- **[Fase 8]** Tombol Sign In/Sign Up di-*disable* sampai Turnstile berhasil memverifikasi pengguna.
 - **[Fase 7]** Fitur Anti Brute-Force (Account Lockout System) berbasis database Prisma.
 - **[Fase 7]** Kolom `failedAttempts` dan `lockedUntil` pada tabel `User`.
 - **[Fase 7]** Logika penguncian akun selama 15 menit jika gagal login 5 kali berturut-turut.
