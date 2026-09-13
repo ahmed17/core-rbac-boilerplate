@@ -28,6 +28,13 @@ export const MASTER_MENUS = [
         sortOrder: 2,
         permissionAction: "read:roles",
       },
+      {
+        title: "Menu Management",
+        url: "/admin/menus",
+        icon: "ListTree",
+        sortOrder: 3,
+        permissionAction: "read:menus",
+      },
     ],
   },
 ];

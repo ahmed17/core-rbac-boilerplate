@@ -50,4 +50,22 @@ export const MASTER_PERMISSIONS = [
     action: "delete:roles",
     description: "Menghapus Role dari sistem.",
   },
+
+  // --- Menu Management ---
+  {
+    action: "read:menus",
+    description: "Melihat daftar menu sistem.",
+  },
+  {
+    action: "create:menus",
+    description: "Menambahkan menu baru.",
+  },
+  {
+    action: "update:menus",
+    description: "Memperbarui konfigurasi menu (ikon, URL, izin).",
+  },
+  {
+    action: "delete:menus",
+    description: "Menghapus menu dari sistem.",
+  },
 ];
