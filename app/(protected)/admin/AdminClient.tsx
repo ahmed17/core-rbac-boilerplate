@@ -32,6 +32,8 @@ export default function AdminClient() {
   const [error, setError] = useState("");
   
   const [showPassword, setShowPassword] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Real-time password validation logic
   const isLengthValid = newUser.password.length >= 8;
@@ -85,23 +87,27 @@ export default function AdminClient() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini secara permanen?")) return;
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
     
     try {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "DELETE", userId }),
+        body: JSON.stringify({ action: "DELETE", userId: userToDelete }),
       });
       if (res.ok) {
         fetchUsers();
+        setUserToDelete(null);
       } else {
         const data = await res.json();
         alert(data.error || "Gagal menghapus user");
       }
     } catch (err) {
       alert("Terjadi kesalahan server");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -220,7 +226,7 @@ export default function AdminClient() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => setUserToDelete(user.id)}
                           className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
                           title="Hapus Pengguna"
                         >
@@ -347,6 +353,39 @@ export default function AdminClient() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Delete Confirmation */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="glass-card w-full max-w-sm p-6 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 bg-error/10 text-error rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            </div>
+            <h2 className="text-xl font-semibold">Confirm Deletion</h2>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to permanently delete this user? This action cannot be undone.
+            </p>
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteUser}
+                className="btn-primary bg-error hover:bg-error/90 text-white"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </div>
           </div>
         </div>
       )}
