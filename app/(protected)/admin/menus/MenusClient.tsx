@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { icons } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface Permission {
   id: string;
@@ -36,10 +38,17 @@ export default function MenusClient() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  const { data: session } = useSession() as any;
+  const userPermissions = session?.user?.permissions || [];
+  const canCreate = userPermissions.includes("create:menus");
+  const canUpdate = userPermissions.includes("update:menus");
+  const canDelete = userPermissions.includes("delete:menus");
   
   const [formData, setFormData] = useState({
     id: "",
@@ -172,13 +181,31 @@ export default function MenusClient() {
             Atur struktur navigasi sidebar dan kaitkan dengan hak akses (RBAC).
           </p>
         </div>
-        <button 
-          onClick={() => handleOpenAddModal("")}
-          className="btn-primary flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Add Parent Menu
-        </button>
+        {canCreate && (
+          <button 
+            onClick={() => handleOpenAddModal("")}
+            className="btn-primary flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Add Parent Menu
+          </button>
+        )}
+      </div>
+
+      {/* Toolbar: Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative w-full max-w-sm">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <input
+            type="text"
+            placeholder="Cari menu..."
+            className="input-field !pl-10"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="glass-card rounded-2xl overflow-hidden border border-border">
@@ -194,14 +221,31 @@ export default function MenusClient() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {menus.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
-                    Belum ada menu yang dikonfigurasi.
-                  </td>
-                </tr>
-              ) : (
-                menus.map((parentMenu) => (
+              {(() => {
+                const filteredMenus = search.trim() === "" ? menus : menus.reduce((acc: Menu[], parent) => {
+                  const parentMatches = parent.title.toLowerCase().includes(search.toLowerCase());
+                  const matchingChildren = parent.children.filter(child => child.title.toLowerCase().includes(search.toLowerCase()));
+
+                  if (parentMatches || matchingChildren.length > 0) {
+                    acc.push({
+                      ...parent,
+                      children: parentMatches ? parent.children : matchingChildren
+                    });
+                  }
+                  return acc;
+                }, []);
+
+                if (filteredMenus.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                        Belum ada menu yang dikonfigurasi atau ditemukan.
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return filteredMenus.map((parentMenu) => (
                   <React.Fragment key={parentMenu.id}>
                     {/* Parent Row */}
                     <tr className="hover:bg-muted/30 transition-colors bg-muted/10">
@@ -228,27 +272,36 @@ export default function MenusClient() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenAddModal(parentMenu.id)}
-                            className="text-emerald-500 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-emerald-500/10"
-                            title="Add Sub-menu"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(parentMenu)}
-                            className="text-primary hover:text-primary/80 transition-colors p-2 rounded-lg hover:bg-primary/10"
-                            title="Edit"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          </button>
-                          <button
-                            onClick={() => setMenuToDelete(parentMenu)}
-                            className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
-                            title="Delete"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                          </button>
+                          {canCreate && (
+                            <button
+                              onClick={() => handleOpenAddModal(parentMenu.id)}
+                              className="text-emerald-500 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-emerald-500/10"
+                              title="Add Sub-menu"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            </button>
+                          )}
+                          {canUpdate && (
+                            <button
+                              onClick={() => handleOpenEditModal(parentMenu)}
+                              className="text-primary hover:text-primary/80 transition-colors p-2 rounded-lg hover:bg-primary/10"
+                              title="Edit"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setMenuToDelete(parentMenu)}
+                              className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
+                              title="Delete"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                          )}
+                          {!canCreate && !canUpdate && !canDelete && (
+                            <span className="text-xs text-muted-foreground italic px-2 py-2">Read-only</span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -277,36 +330,43 @@ export default function MenusClient() {
                         </td>
                         <td className="px-6 py-3 text-right">
                           <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleOpenEditModal(child, parentMenu.id)}
-                              className="text-primary hover:text-primary/80 transition-colors p-1.5 rounded-lg hover:bg-primary/10"
-                              title="Edit"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                            </button>
-                            <button
-                              onClick={() => setMenuToDelete(child)}
-                              className="text-error hover:text-error/80 transition-colors p-1.5 rounded-lg hover:bg-error/10"
-                              title="Delete"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>
+                            {canUpdate && (
+                              <button
+                                onClick={() => handleOpenEditModal(child, parentMenu.id)}
+                                className="text-primary hover:text-primary/80 transition-colors p-1.5 rounded-lg hover:bg-primary/10"
+                                title="Edit"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => setMenuToDelete(child)}
+                                className="text-error hover:text-error/80 transition-colors p-1.5 rounded-lg hover:bg-error/10"
+                                title="Delete"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                              </button>
+                            )}
+                            {!canUpdate && !canDelete && (
+                              <span className="text-[10px] text-muted-foreground italic px-2 py-1">Read-only</span>
+                            )}
                           </div>
                         </td>
                       </tr>
                     ))}
                   </React.Fragment>
-                ))
-              )}
+                ));
+              })()}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Modal Add/Edit Menu */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
-          <div className="bg-background border border-border w-full max-w-xl flex flex-col p-6 rounded-2xl shadow-xl">
+      {isModalOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-zinc-950 border border-border w-full max-w-xl flex flex-col p-6 rounded-2xl shadow-xl">
             <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Menu" : "Create New Menu"}</h2>
             
             <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col min-h-0">
@@ -400,7 +460,7 @@ export default function MenusClient() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 shrink-0 border-t border-border mt-4">
+              <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-border/50 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -409,23 +469,20 @@ export default function MenusClient() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={isSubmitting}
-                >
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? "Saving..." : "Save Menu"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Delete Confirmation */}
-      {menuToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-sm p-6 text-center space-y-4">
+      {menuToDelete && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-zinc-950 border border-border w-full max-w-sm p-6 text-center space-y-4 rounded-2xl shadow-xl">
             <div className="mx-auto w-12 h-12 bg-error/10 text-error rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
             </div>
@@ -453,7 +510,8 @@ export default function MenusClient() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

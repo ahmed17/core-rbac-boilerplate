@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Role {
   id: string;
@@ -24,6 +25,12 @@ export default function AdminClient() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  const { data: session } = useSession() as any;
+  const userPermissions = session?.user?.permissions || [];
+  const canCreate = userPermissions.includes("create:users");
+  const canUpdate = userPermissions.includes("update:users");
+  const canDelete = userPermissions.includes("delete:users");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,13 +195,15 @@ export default function AdminClient() {
             Kelola pengguna, tetapkan role, dan pantau status akun.
           </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Add User
-        </button>
+        {canCreate && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Add User
+          </button>
+        )}
       </div>
 
       {/* Toolbar: Search */}
@@ -206,7 +215,7 @@ export default function AdminClient() {
           <input
             type="text"
             placeholder="Cari nama atau email..."
-            className="input-field pl-10"
+            className="input-field !pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -242,9 +251,10 @@ export default function AdminClient() {
                       <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
                       <td className="px-6 py-4">
                         <select
-                          className="bg-transparent border border-border rounded-lg text-sm px-2 py-1.5 focus:ring-2 focus:ring-primary focus:outline-none"
+                          className="bg-transparent border border-border rounded-lg text-sm px-2 py-1.5 focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           value={user.roleId || ""}
                           onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                          disabled={!canUpdate}
                         >
                           <option value="">No Role (User)</option>
                           {roles.map((r) => (
@@ -261,23 +271,30 @@ export default function AdminClient() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setUserToEdit(user);
-                              setEditFormData({ name: user.name || "", email: user.email || "", password: "" });
-                            }}
-                            className="text-primary hover:text-primary/80 transition-colors p-2 rounded-lg hover:bg-primary/10"
-                            title="Edit Profil"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                          </button>
-                          <button
-                            onClick={() => setUserToDelete(user.id)}
-                            className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
-                            title="Hapus Pengguna"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                          </button>
+                          {canUpdate && (
+                            <button
+                              onClick={() => {
+                                setUserToEdit(user);
+                                setEditFormData({ name: user.name || "", email: user.email || "", password: "" });
+                              }}
+                              className="text-primary hover:text-primary/80 transition-colors p-2 rounded-lg hover:bg-primary/10"
+                              title="Edit Profil"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setUserToDelete(user.id)}
+                              className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10"
+                              title="Hapus Pengguna"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                          )}
+                          {!canUpdate && !canDelete && (
+                            <span className="text-xs text-muted-foreground italic">Read-only</span>
+                          )}
                         </div>
                       </td>
                     </tr>

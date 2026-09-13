@@ -152,8 +152,8 @@ export default function GlobalSidebar({ userPermissions, isMobileOpen, setMobile
                             className={`
                               flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
                               ${isChildActive 
-                                ? "text-white font-semibold" 
-                                : "text-slate-400 hover:text-white"
+                                ? "bg-slate-800/80 text-white font-semibold border-l-2 border-blue-500" 
+                                : "text-slate-400 hover:text-white hover:bg-slate-800/40 border-l-2 border-transparent"
                               }
                             `}
                           >

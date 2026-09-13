@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 
 interface Permission {
   id: string;
@@ -21,8 +23,13 @@ export default function PermissionsClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   
-  const [permToDelete, setPermToDelete] = useState<Permission | null>(null);
+  const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { data: session } = useSession() as any;
+  const userPermissions = session?.user?.permissions || [];
+  const canCreate = userPermissions.includes("create:permissions");
+  const canDelete = userPermissions.includes("delete:permissions");
 
   const fetchPermissions = async () => {
     try {
@@ -92,18 +99,18 @@ export default function PermissionsClient() {
   };
 
   const confirmDeletePermission = async () => {
-    if (!permToDelete) return;
+    if (!permissionToDelete) return;
     setIsDeleting(true);
     
     try {
       const res = await fetch("/api/admin/permissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestAction: "DELETE", id: permToDelete.id }),
+        body: JSON.stringify({ requestAction: "DELETE", id: permissionToDelete.id }),
       });
       if (res.ok) {
         fetchPermissions();
-        setPermToDelete(null);
+        setPermissionToDelete(null);
       } else {
         const data = await res.json();
         alert(data.error || "Gagal menghapus permission");
@@ -129,16 +136,18 @@ export default function PermissionsClient() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Permissions Management</h1>
           <p className="text-muted-foreground mt-2">
-            Daftarkan hak akses sistem (RBAC) baru sebelum didistribusikan ke dalam Role.
+            Kelola data master permission / kunci akses untuk aplikasi Anda.
           </p>
         </div>
-        <button 
-          onClick={handleOpenAddModal}
-          className="btn-primary flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          Add Permission
-        </button>
+        {canCreate && (
+          <button 
+            onClick={handleOpenAddModal}
+            className="btn-primary flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Add Permission
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -149,7 +158,7 @@ export default function PermissionsClient() {
           <input
             type="text"
             placeholder="Cari permission..."
-            className="input-field pl-10"
+            className="input-field !pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -197,14 +206,18 @@ export default function PermissionsClient() {
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                         </button>
-                        <button
-                          onClick={() => setPermToDelete(perm)}
-                          className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10 disabled:opacity-50"
-                          title="Delete"
-                          disabled={perm._count?.roles ? perm._count.roles > 0 : false}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                        </button>
+                        {canDelete ? (
+                          <button
+                            onClick={() => setPermissionToDelete(perm)}
+                            className="text-error hover:text-error/80 transition-colors p-2 rounded-lg hover:bg-error/10 disabled:opacity-50"
+                            title="Delete Permission"
+                            disabled={perm._count?.roles ? perm._count.roles > 0 : false}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic px-2 py-2">Read-only</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -216,9 +229,9 @@ export default function PermissionsClient() {
       </div>
 
       {/* Modal Add/Edit */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
-          <div className="bg-background border border-border w-full max-w-lg p-6 rounded-2xl shadow-xl">
+      {isModalOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-zinc-950 border border-border w-full max-w-lg p-6 rounded-2xl shadow-xl">
             <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Permission" : "Create New Permission"}</h2>
             <form onSubmit={handleSubmit}>
               {error && (
@@ -267,13 +280,14 @@ export default function PermissionsClient() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Delete Confirmation */}
-      {permToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="glass-card w-full max-w-sm p-6 text-center space-y-4">
+      {permToDelete && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-zinc-950 border border-border w-full max-w-sm p-6 text-center space-y-4 rounded-2xl shadow-xl">
             <div className="mx-auto w-12 h-12 bg-error/10 text-error rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
             </div>
@@ -300,7 +314,8 @@ export default function PermissionsClient() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
