@@ -30,6 +30,17 @@ export default function AdminClient() {
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", roleId: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Real-time password validation logic
+  const isLengthValid = newUser.password.length >= 8;
+  const hasLowercase = /[a-z]/.test(newUser.password);
+  const hasUppercase = /[A-Z]/.test(newUser.password);
+  const hasNumber = /[0-9]/.test(newUser.password);
+  const hasSymbol = /[^a-zA-Z0-9]/.test(newUser.password);
+  
+  const isPasswordValid = newUser.password.length > 0 && isLengthValid && hasLowercase && hasUppercase && hasNumber && hasSymbol;
 
   const fetchUsers = async () => {
     try {
@@ -261,14 +272,44 @@ export default function AdminClient() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  className="input-field"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="input-field pr-10"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1.5 mt-2">
+                  <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${isLengthValid ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Minimal 8 karakter
+                  </p>
+                  <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasUppercase && hasLowercase ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Huruf besar & huruf kecil
+                  </p>
+                  <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasNumber ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Minimal 1 angka
+                  </p>
+                  <p className={`text-[0.75rem] flex items-center gap-1.5 transition-colors ${hasSymbol ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground/70'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Minimal 1 simbol unik
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -288,7 +329,10 @@ export default function AdminClient() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setError("");
+                  }}
                   className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
                   disabled={isSubmitting}
                 >
@@ -297,7 +341,7 @@ export default function AdminClient() {
                 <button
                   type="submit"
                   className="btn-primary"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isPasswordValid}
                 >
                   {isSubmitting ? "Creating..." : "Create User"}
                 </button>
