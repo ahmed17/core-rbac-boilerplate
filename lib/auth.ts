@@ -18,16 +18,22 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email dan password wajib diisi.");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: {
-            role: {
-              include: {
-                permissions: true,
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            include: {
+              role: {
+                include: {
+                  permissions: true,
+                },
               },
             },
-          },
-        });
+          });
+        } catch (error) {
+          console.error("Database error during login:", error);
+          throw new Error("Sistem sedang mengalami gangguan. Gagal terhubung ke server.");
+        }
 
         if (!user || !user.password) {
           throw new Error("Email atau password salah.");
